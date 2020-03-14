@@ -301,6 +301,7 @@ def client_custom_metrics(user_model: SeldonComponent) -> List[Dict]:
                     "Bad metric created during request: " + j_str,
                     reason="MICROSERVICE_BAD_METRIC",
                 )
+
             return metrics
         except SeldonNotImplementedError:
             pass

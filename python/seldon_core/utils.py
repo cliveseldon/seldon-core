@@ -12,13 +12,11 @@ from seldon_core.proto import prediction_pb2
 from seldon_core.flask_utils import SeldonMicroserviceException
 from seldon_core.user_model import (
     client_class_names,
-    client_custom_metrics,
     client_custom_tags,
     client_feature_names,
     SeldonComponent,
 )
 from seldon_core.imports_helper import _TF_PRESENT
-
 from typing import Tuple, Dict, Union, List, Optional, Iterable
 
 if _TF_PRESENT:
@@ -323,6 +321,7 @@ def construct_response_json(
     client_request_raw: Union[List, Dict],
     client_raw_response: Union[np.ndarray, str, bytes, dict],
     meta: dict = None,
+    metrics: List[Dict] = None,
 ) -> Union[List, Dict]:
     """
     This class converts a raw REST response into a JSON object that has the same structure as
@@ -420,7 +419,6 @@ def construct_response_json(
         tags.update(custom_tags)
     if tags:
         response["meta"]["tags"] = tags
-    metrics = client_custom_metrics(user_model)
     if metrics:
         response["meta"]["metrics"] = metrics
     puid = client_request_raw.get("meta", {}).get("puid", None)
@@ -436,6 +434,7 @@ def construct_response(
     client_request: prediction_pb2.SeldonMessage,
     client_raw_response: Union[np.ndarray, str, bytes, dict],
     meta: dict = None,
+    metrics: List[Dict] = None,
 ) -> prediction_pb2.SeldonMessage:
     """
 
@@ -468,8 +467,6 @@ def construct_response(
         tags.update(custom_tags)
     if tags:
         meta_json["tags"] = tags
-
-    metrics = client_custom_metrics(user_model)
     if metrics:
         meta_json["metrics"] = metrics
     if client_request.meta:
