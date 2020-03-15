@@ -15,5 +15,14 @@ const (
 	TfServingArgPort     = "--port="
 	TfServingArgRestPort = "--rest_api_port="
 
-	FirstPortNumber = 9000
+	FirstPortNumber       = int32(9000)
+	DNSLocalHost          = "localhost"
+	DNSClusterLocalSuffix = ".svc.cluster.local."
+	GrpcPortName          = "grpc"
+	HttpPortName          = "http"
+)
+
+const (
+	MetricsPortName        = "metrics"
+	FirstMetricsPortNumber = int32(6000)
 )
