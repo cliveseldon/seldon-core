@@ -346,7 +346,7 @@ func (r *SeldonDeploymentSpec) checkPredictiveUnits(pu *PredictiveUnit, p *Predi
 		}
 
 	} else if IsPrepack(pu) {
-		if pu.ModelURI == "" {
+		if pu.ModelURI == "" && *pu.Implementation != PrepackRayName {
 			allErrs = append(allErrs, field.Invalid(fldPath, pu.Name, "Predictive unit modelUri required when using standalone servers"))
 		}
 		c := GetContainerForPredictiveUnit(p, pu.Name)

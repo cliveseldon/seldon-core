@@ -114,6 +114,11 @@ predictor_servers:
       kfserving:
         defaultImageVersion: "0.1.1"
         image: seldonio/mlserver
+  RAY_SERVER:
+    protocols:
+      seldon:
+        defaultImageVersion: "1.6.0-dev"
+        image: seldonio/rayserver
   TENSORFLOW_SERVER:
     protocols:
       seldon:

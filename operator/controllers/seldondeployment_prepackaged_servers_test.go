@@ -92,6 +92,81 @@ var _ = Describe("Create a prepacked sklearn server", func() {
 
 })
 
+var _ = Describe("Create a prepacked ray server", func() {
+	const timeout = time.Second * 30
+	const interval = time.Second * 1
+	const name = "pp1"
+	const sdepName = "prepack1"
+	envExecutorUser = "2"
+	By("Creating a resource")
+	It("should create a resource with defaults", func() {
+		Expect(k8sClient).NotTo(BeNil())
+		var modelType = machinelearningv1.MODEL
+		var impl = machinelearningv1.PredictiveUnitImplementation(constants.PrePackedServerRay)
+		key := types.NamespacedName{
+			Name:      sdepName,
+			Namespace: "default",
+		}
+		instance := &machinelearningv1.SeldonDeployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+			},
+			Spec: machinelearningv1.SeldonDeploymentSpec{
+				Name: name,
+				Predictors: []machinelearningv1.PredictorSpec{
+					{
+						Name: "p1",
+						Graph: machinelearningv1.PredictiveUnit{
+							Name:           "classifier",
+							Type:           &modelType,
+							Implementation: &impl,
+							Endpoint:       &machinelearningv1.Endpoint{Type: machinelearningv1.REST},
+						},
+					},
+				},
+			},
+		}
+
+		configMapName := types.NamespacedName{Name: "seldon-config",
+			Namespace: "seldon-system"}
+
+		configResult := &corev1.ConfigMap{}
+		const timeout = time.Second * 30
+		Eventually(func() error { return k8sClient.Get(context.TODO(), configMapName, configResult) }, timeout).
+			Should(Succeed())
+
+		// Run Defaulter
+		instance.Default()
+
+		Expect(k8sClient.Create(context.Background(), instance)).Should(Succeed())
+		//time.Sleep(time.Second * 5)
+
+		fetched := &machinelearningv1.SeldonDeployment{}
+		Eventually(func() error {
+			err := k8sClient.Get(context.Background(), key, fetched)
+			return err
+		}, timeout, interval).Should(BeNil())
+		Expect(fetched.Name).Should(Equal(sdepName))
+
+		sPodSpec, idx := utils.GetSeldonPodSpecForPredictiveUnit(&instance.Spec.Predictors[0], instance.Spec.Predictors[0].Graph.Name)
+		depName := machinelearningv1.GetDeploymentName(instance, instance.Spec.Predictors[0], sPodSpec, idx)
+		depKey := types.NamespacedName{
+			Name:      depName,
+			Namespace: "default",
+		}
+		depFetched := &appsv1.Deployment{}
+		Eventually(func() error {
+			err := k8sClient.Get(context.Background(), depKey, depFetched)
+			return err
+		}, timeout, interval).Should(BeNil())
+		Expect(len(depFetched.Spec.Template.Spec.Containers)).Should(Equal(2))
+
+		Expect(k8sClient.Delete(context.Background(), instance)).Should(Succeed())
+	})
+
+})
+
 var _ = Describe("Create a prepacked tfserving server for Seldon protocol and REST", func() {
 	const timeout = time.Second * 30
 	const interval = time.Second * 1

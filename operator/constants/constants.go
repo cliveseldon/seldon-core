@@ -11,6 +11,7 @@ const (
 	PrePackedServerSklearn    = "SKLEARN_SERVER"
 	PrePackedServerTriton     = "TRITON_SERVER"
 	PrePackedMlflow           = "MLFLOW_SERVER"
+	PrePackedServerRay        = "RAY_SERVER"
 
 	TfServingGrpcPort    = 2000
 	TfServingRestPort    = 2001

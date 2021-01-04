@@ -41,6 +41,14 @@ data:
               }
             }
         },
+        "RAY_SERVER": {
+          "protocols" : {
+            "seldon": {
+              "image": "seldonio/rayserver",
+              "defaultImageVersion": "1.6.0-dev"
+              },
+            }
+        },
         "XGBOOST_SERVER": {
           "protocols" : {
             "seldon": {

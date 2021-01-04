@@ -331,6 +331,58 @@ func (pi *PrePackedInitialiser) addModelDefaultServers(mlDepSepc *machinelearnin
 	return nil
 }
 
+func (pi *PrePackedInitialiser) addRayServer(mlDepSepc *machinelearningv1.SeldonDeploymentSpec, pu *machinelearningv1.PredictiveUnit, deploy *appsv1.Deployment, serverConfig *machinelearningv1.PredictorServerConfig) error {
+	ty := machinelearningv1.MODEL
+	pu.Type = &ty
+
+	if pu.Endpoint == nil {
+		pu.Endpoint = &machinelearningv1.Endpoint{Type: machinelearningv1.REST}
+	}
+	c := utils.GetContainerForDeployment(deploy, pu.Name)
+	existing := c != nil
+	if !existing {
+		c = &v1.Container{
+			Name: pu.Name,
+			VolumeMounts: []v1.VolumeMount{
+				{
+					Name:      machinelearningv1.PODINFO_VOLUME_NAME,
+					MountPath: machinelearningv1.PODINFO_VOLUME_PATH,
+				},
+			},
+		}
+	}
+
+	if c.Image == "" {
+		c.Image = serverConfig.PrepackImageName(mlDepSepc.Protocol, pu)
+	}
+
+	params := pu.Parameters
+	paramStr, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+
+	if len(params) > 0 {
+		if !utils.HasEnvVar(c.Env, machinelearningv1.ENV_PREDICTIVE_UNIT_PARAMETERS) {
+			c.Env = append(c.Env, v1.EnvVar{Name: machinelearningv1.ENV_PREDICTIVE_UNIT_PARAMETERS, Value: string(paramStr)})
+		} else {
+			c.Env = utils.SetEnvVar(c.Env, v1.EnvVar{Name: machinelearningv1.ENV_PREDICTIVE_UNIT_PARAMETERS, Value: string(paramStr)})
+		}
+
+	}
+
+	// Add container to deployment
+	if !existing {
+		if len(deploy.Spec.Template.Spec.Containers) > 0 {
+			deploy.Spec.Template.Spec.Containers = append(deploy.Spec.Template.Spec.Containers, *c)
+		} else {
+			deploy.Spec.Template.Spec.Containers = []v1.Container{*c}
+		}
+	}
+
+	return nil
+}
+
 func SetUriParamsForTFServingProxyContainer(pu *machinelearningv1.PredictiveUnit, c *v1.Container) {
 
 	parameters := pu.Parameters
@@ -417,6 +469,10 @@ func (pi *PrePackedInitialiser) createStandaloneModelServers(mlDep *machinelearn
 				}
 			case machinelearningv1.PrepackTritonName:
 				if err := pi.addTritonServer(&mlDep.Spec, pu, deploy, serverConfig); err != nil {
+					return err
+				}
+			case machinelearningv1.PrepackRayName:
+				if err := pi.addRayServer(&mlDep.Spec, pu, deploy, serverConfig); err != nil {
 					return err
 				}
 			default:
