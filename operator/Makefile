@@ -161,6 +161,11 @@ docker-push:
 docker-push-redhat:
 	docker push ${IMG_REDHAT}
 
+docker-push-aws:
+	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 709825985650.dkr.ecr.us-east-1.amazonaws.com
+	docker tag ${IMG}   709825985650.dkr.ecr.us-east-1.amazonaws.com/seldon-technologies/seldon-core-operator:${VERSION}
+	docker push  709825985650.dkr.ecr.us-east-1.amazonaws.com/seldon-technologies/seldon-core-operator:${VERSION}
+
 kind-image-install: docker-build
 	kind load -v 3 docker-image ${IMG} --name ${KIND_NAME}
 

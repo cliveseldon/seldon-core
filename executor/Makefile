@@ -119,6 +119,12 @@ kind-image-install-redhat: docker-build-redhat
 	kind load -v 3 docker-image ${IMG_REDHAT} --name ${KIND_NAME}
 
 
+docker-push-aws:
+	aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 709825985650.dkr.ecr.us-east-1.amazonaws.com
+	docker tag ${IMG}   709825985650.dkr.ecr.us-east-1.amazonaws.com/seldon-technologies/seldon-core-executor:${VERSION}
+	docker push  709825985650.dkr.ecr.us-east-1.amazonaws.com/seldon-technologies/seldon-core-executor:${VERSION}
+
+
 .PHONY: clean
 clean:
 	rm -rf vendor
